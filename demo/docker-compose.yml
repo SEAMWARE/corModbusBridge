@@ -1,0 +1,53 @@
+#
+# FILE            docker-compose.yml
+#
+# AUTHOR          Ken Zangelin
+#
+# Copyright 2026 Seamware
+# SPDX-License-Identifier: Apache-2.0
+#
+# The Modbus demo: an OpenPLC tank, coraine bridging it to NGSI-LD, TimescaleDB for its history
+# and a notification listener. See ../DEMO.md.
+#
+# CORAINE_IMAGE is required and has no default on purpose: name the exact image, one that
+# carries modbus.so (/opt/seamware/plugins/bridge/modbus.so).
+#
+services:
+  openplc:
+    build: ./openplc
+    ports:
+      - "8080:8080"                # the OpenPLC web UI - Monitoring shows the PLC side
+      - "5020:502"                 # Modbus TCP, for poking at the PLC from the host
+
+  coraine:
+    image: ${CORAINE_IMAGE:?set CORAINE_IMAGE to a coraine image that carries modbus.so}
+    command: ["--database", "corDB", "--troe", "timescale", "--troeHost", "timescale",
+              "--bridges", "modbus", "--bridgeConfig", "/etc/coraine/bridges.json"]
+    volumes:
+      - ./bridges.json:/etc/coraine/bridges.json:ro
+    ports:
+      - "1026:1026"
+    depends_on:
+      openplc:
+        condition: service_started
+      timescale:
+        condition: service_healthy
+
+  #
+  # History (TRoE). The -ha image, because the timescale plugin's schema needs PostGIS too.
+  # Trust authentication: a demo on one host, never anything more.
+  #
+  timescale:
+    image: timescale/timescaledb-ha:pg16
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      retries: 30
+
+  listener:
+    image: python:3.13-alpine
+    command: ["python3", "-u", "/listener.py"]
+    volumes:
+      - ./listener/listener.py:/listener.py:ro

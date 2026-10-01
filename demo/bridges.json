@@ -1,0 +1,10 @@
+{ "modbus": { "server": { "host": "openplc", "port": 502, "unit": 1, "pollMs": 250, "timeoutMs": 500 },
+              "ngsild": { "topics": {
+                "holding/0":    { "entityId": "urn:ngsi-ld:Tank:1", "entityType": "Tank", "attribute": "level",
+                                  "channelInfo": [ { "key": "scale", "value": "0.1" }, { "key": "deadband", "value": "0.5" } ] },
+                "coil/0":       { "entityId": "urn:ngsi-ld:Tank:1", "entityType": "Tank", "attribute": "pumpOn" },
+                "coil/1":       { "entityId": "urn:ngsi-ld:Tank:1", "entityType": "Tank", "attribute": "alarm" },
+                "holding/1024": { "entityId": "urn:ngsi-ld:Tank:1", "entityType": "Tank", "attribute": "setpoint",
+                                  "channelInfo": [ { "key": "scale", "value": "0.1" } ] },
+                "holding/1025": { "entityId": "urn:ngsi-ld:Tank:1", "entityType": "Tank", "attribute": "outflow",
+                                  "channelInfo": [ { "key": "scale", "value": "0.01" } ] } } } } }
