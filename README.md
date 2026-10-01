@@ -10,6 +10,8 @@ not supported - is coraine's
 and its functional test (`bridge_modbus.test`, with the `ftModbus.py` simulator)
 lives in coraine as well: a bridge is tested through the broker that loads it.
 
+**A demo** - an OpenPLC water tank, read and controlled over NGSI-LD - is in [DEMO.md](DEMO.md).
+
 ## The shape of it
 
 - **One Bridge is one Modbus server** (`host:port`, default unit, poll interval).
