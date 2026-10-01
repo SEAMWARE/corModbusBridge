@@ -11,6 +11,10 @@
  * The level rises while the pump runs and falls through an outlet. The pump is switched
  * around a setpoint with a 5 % hysteresis, and a high-level alarm trips above 90 %.
  *
+ * ⚠ The located declarations below keep ONE space around AT and ':' - not aligned. OpenPLC's
+ * Monitoring page splits each line on single spaces to find the address, and a padded line shows
+ * as 0 there for good (the PLC itself is fine).
+ *
  * What the Modbus server shows (OpenPLC's default map):
  *
  *   %QW0   holding register 0      level      0.1 %     (the PLC writes it every cycle)
@@ -21,11 +25,11 @@
  *)
 PROGRAM tank
   VAR
-    level_reg AT %QW0   : UINT;
-    pump      AT %QX0.0 : BOOL;
-    alarm     AT %QX0.1 : BOOL;
-    setpoint  AT %MW0   : UINT;
-    outflow   AT %MW1   : UINT;
+    level_reg AT %QW0 : UINT;
+    pump AT %QX0.0 : BOOL;
+    alarm AT %QX0.1 : BOOL;
+    setpoint AT %MW0 : UINT;
+    outflow AT %MW1 : UINT;
   END_VAR
   VAR
     level       : REAL := 40.0;
