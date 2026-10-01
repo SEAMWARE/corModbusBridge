@@ -22,8 +22,13 @@ e = json.load(sys.stdin)
 print("  level %5.1f %%   pump %-5s   alarm %-5s   setpoint %5.1f %%   outflow %.2f %%/s" %
       (e.get("level", 0), e.get("pumpOn"), e.get("alarm"), e.get("setpoint", 0), e.get("outflow", 0)))'; }
 watchTank() { for _ in $(seq 1 "$1"); do tank; sleep 1; done; }
+#
+# A new value comes with its own observedAt - a PATCH that changes the value and keeps the old
+# observedAt says the new value was seen when the old one was.
+#
 setAttr()   { curl -s -o /dev/null -w "  PATCH $1=$2 -> %{http_code}\n" -X PATCH "$CORAINE_URL/ngsi-ld/v1/entities/$TANK/attrs/$1" \
-                -H 'Content-Type: application/json' -d "{\"value\": $2}"; }
+                -H 'Content-Type: application/json' \
+                -d "{\"value\": $2, \"observedAt\": \"$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)\"}"; }
 
 
 step "0. Waiting for the tank to appear - the bridge creates it on the first poll"
