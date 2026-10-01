@@ -7,4 +7,7 @@
                 "holding/1024": { "entityId": "urn:ngsi-ld:Tank:1", "entityType": "Tank", "attribute": "setpoint",
                                   "channelInfo": [ { "key": "scale", "value": "0.1" } ] },
                 "holding/1025": { "entityId": "urn:ngsi-ld:Tank:1", "entityType": "Tank", "attribute": "outflow",
-                                  "channelInfo": [ { "key": "scale", "value": "0.01" } ] } } } } }
+                                  "channelInfo": [ { "key": "scale", "value": "0.01" } ] } } } },
+  "mqtt": { "server": { "uri": "mqtt://mosquitto:1883", "MQTT-Version": "mqtt5.0", "clientId": "coraine-demo" },
+            "ngsild": { "topics": {
+              "plant/tank1/temperature": { "entityId": "urn:ngsi-ld:Tank:1", "entityType": "Tank", "attribute": "temperature" } } } } }

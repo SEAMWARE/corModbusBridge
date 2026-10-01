@@ -6,11 +6,12 @@
 # Copyright 2026 Seamware
 # SPDX-License-Identifier: Apache-2.0
 #
-# The Modbus demo: an OpenPLC tank, coraine bridging it to NGSI-LD, TimescaleDB for its history
-# and a notification listener. See ../DEMO.md.
+# The tank demo: an OpenPLC tank on Modbus, an MQTT temperature sensor, coraine bridging both to
+# NGSI-LD, TimescaleDB for history, and two listeners - HTTP notifications, and everything on the
+# plant's MQTT topics. See ../DEMO.md.
 #
 # CORAINE_IMAGE is required and has no default on purpose: name the exact image, one that
-# carries modbus.so (/opt/seamware/plugins/bridge/modbus.so).
+# carries modbus.so and mqtt.so (/opt/seamware/plugins/bridge/).
 #
 services:
   openplc:
@@ -22,7 +23,7 @@ services:
   coraine:
     image: ${CORAINE_IMAGE:?set CORAINE_IMAGE to a coraine image that carries modbus.so}
     command: ["--database", "corDB", "--troe", "timescale", "--troeHost", "timescale",
-              "--bridges", "modbus", "--bridgeConfig", "/etc/coraine/bridges.json"]
+              "--bridges", "modbus,mqtt", "--bridgeConfig", "/etc/coraine/bridges.json"]
     volumes:
       - ./bridges.json:/etc/coraine/bridges.json:ro
     ports:
@@ -32,6 +33,8 @@ services:
         condition: service_started
       timescale:
         condition: service_healthy
+      mosquitto:
+        condition: service_started
 
   #
   # History (TRoE). The -ha image, because the timescale plugin's schema needs PostGIS too.
@@ -51,3 +54,33 @@ services:
     command: ["python3", "-u", "/listener.py"]
     volumes:
       - ./listener/listener.py:/listener.py:ro
+
+  #
+  # MQTT: the server, a temperature sensor publishing on it, and a monitor printing one line per
+  # message on any of the plant's topics - docker compose logs -f mqtt-monitor
+  #
+  mosquitto:
+    image: eclipse-mosquitto:2.0.20
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      - "1884:1883"                # for any MQTT client on the host - 1884, a host often runs its own mosquitto on 1883
+
+  sensor:
+    image: eclipse-mosquitto:2.0.20
+    depends_on:
+      - mosquitto
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          t=$$(awk "BEGIN { srand(); printf \"%.1f\", 19 + rand() * 3 }")
+          mosquitto_pub -h mosquitto -t plant/tank1/temperature -m "$$t" 2>/dev/null
+          sleep 3
+        done
+
+  mqtt-monitor:
+    image: eclipse-mosquitto:2.0.20
+    depends_on:
+      - mosquitto
+    entrypoint: ["/bin/sh", "-c", "until mosquitto_sub -h mosquitto -v -t 'plant/#'; do sleep 1; done"]
