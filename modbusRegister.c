@@ -942,10 +942,30 @@ static void configRead(const char* configFile)
   if (fP == NULL)
     return;
 
-  static char text[64 * 1024];
-  size_t      n = fread(text, 1, sizeof(text) - 1, fP);
+  //
+  // All of it: the file holds every bridge's Channels (the broker takes up to 4 MiB), and a cut-off text
+  // does not parse - which left the server at its defaults (127.0.0.1:502) without a word
+  //
+  char* text = NULL;
+  long  size = (fseek(fP, 0, SEEK_END) == 0) ? ftell(fP) : -1;
+
+  if ((size >= 0) && (fseek(fP, 0, SEEK_SET) == 0) && ((text = malloc(size + 1)) != NULL))
+  {
+    if (fread(text, 1, size, fP) == (size_t) size)
+      text[size] = 0;
+    else
+    {
+      free(text);
+      text = NULL;
+    }
+  }
   fclose(fP);
-  text[n] = 0;
+
+  if (text == NULL)
+  {
+    COR_E("modbus: cannot read the bridge configuration '%s'", configFile);
+    return;
+  }
 
   CorAlloc ka;
   CorJson  cj;
@@ -970,6 +990,7 @@ static void configRead(const char* configFile)
   }
 
   corAllocBufferReset(&ka, false);
+  free(text);                                         // after the tree: its strings point into it
 }
 
 
